@@ -121,10 +121,22 @@ function buildHtml({
       </div>`
     : `<main class="hero">
         <div class="card">
-          <p class="eyebrow">Ultimate Travel Tips</p>
+          <div class="top-row">
+            <p class="eyebrow">Ultimate Travel Tips</p>
+            <span class="badge">Secure redirect</span>
+          </div>
           <h1>${safeTitle}</h1>
           <p class="line">Taking you to the best price...</p>
-          <p class="line subtle">Finding your tour and calculating the best price...</p>
+          <p class="line subtle" id="status">Loading tours...</p>
+          <div class="activity">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Please wait while we prepare your booking page</span>
+          </div>
+          <ul class="steps" aria-label="Redirect progress">
+            <li class="step active" id="step-1">Loading tours</li>
+            <li class="step" id="step-2">Finding best price</li>
+            <li class="step" id="step-3">Redirecting to Viator</li>
+          </ul>
           <div class="progress-wrap">
             <div class="progress" id="progress"></div>
           </div>
@@ -137,11 +149,21 @@ function buildHtml({
           var start = Date.now();
           var progress = document.getElementById("progress");
           var count = document.getElementById("count");
+          var status = document.getElementById("status");
+          var step1 = document.getElementById("step-1");
+          var step2 = document.getElementById("step-2");
+          var step3 = document.getElementById("step-3");
           var timer = setInterval(function () {
             var elapsed = Date.now() - start;
             var ratio = Math.min(elapsed / total, 1);
             if (progress) progress.style.width = String(Math.max(ratio * 100, 6)) + "%";
             if (count) count.textContent = String(Math.max(0, ((total - elapsed) / 1000))).slice(0, 3);
+            if (status && ratio < 0.4) status.textContent = "Loading tours...";
+            if (status && ratio >= 0.4 && ratio < 0.85) status.textContent = "Finding best price...";
+            if (status && ratio >= 0.85) status.textContent = "Redirecting to Viator...";
+            if (step1) step1.className = ratio < 0.4 ? "step active" : "step done";
+            if (step2) step2.className = ratio >= 0.4 && ratio < 0.85 ? "step active" : ratio >= 0.85 ? "step done" : "step";
+            if (step3) step3.className = ratio >= 0.85 ? "step active" : "step";
             if (ratio >= 1) clearInterval(timer);
           }, 40);
         })();
@@ -166,16 +188,13 @@ function buildHtml({
     <meta name="twitter:image" content="${safeImage}" />
     ${redirectMeta}
     <style>
-      :root { color-scheme: dark; }
+      :root { color-scheme: light; }
       * { box-sizing: border-box; }
       body {
         margin: 0;
         font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-          radial-gradient(1200px 700px at 10% 10%, rgba(56, 189, 248, 0.35), transparent 55%),
-          radial-gradient(1100px 680px at 90% 20%, rgba(167, 139, 250, 0.35), transparent 52%),
-          linear-gradient(145deg, #050816, #0e172f 45%, #111827);
-        color: #f8fafc;
+        background: #f8fafc;
+        color: #0f172a;
         min-height: 100vh;
       }
       .hero {
@@ -186,39 +205,111 @@ function buildHtml({
       }
       .card {
         width: min(720px, 100%);
-        border: 1px solid rgba(148, 163, 184, 0.28);
-        border-radius: 20px;
-        padding: 30px;
-        background: rgba(15, 23, 42, 0.72);
-        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.45);
-        backdrop-filter: blur(6px);
+        border: 1px solid #dbe4ef;
+        border-radius: 22px;
+        padding: 32px;
+        background: #ffffff;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
       }
-      h1 { margin: 10px 0 18px; line-height: 1.2; }
-      .eyebrow { margin: 0; color: #cbd5e1; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; }
-      .line { margin: 6px 0; font-size: 18px; }
-      .subtle { color: #cbd5e1; }
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .badge {
+        font-size: 12px;
+        color: #0f172a;
+        background: #eef2f7;
+        border: 1px solid #d8e1ec;
+        border-radius: 999px;
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+      h1 { margin: 6px 0 14px; line-height: 1.2; font-size: clamp(1.45rem, 2.3vw, 2rem); }
+      .eyebrow { margin: 0; color: #475569; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; font-weight: 600; }
+      .line { margin: 4px 0; font-size: 17px; }
+      .subtle { color: #334155; font-weight: 500; }
+      .activity {
+        margin-top: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #475569;
+        font-size: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 9px 12px;
+      }
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 2px solid #cbd5e1;
+        border-top-color: #0f172a;
+        animation: spin 0.85s linear infinite;
+      }
+      .steps {
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+      .step {
+        font-size: 14px;
+        color: #64748b;
+        transition: color 120ms ease-in;
+        position: relative;
+        padding-left: 20px;
+      }
+      .step::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #cbd5e1;
+        position: absolute;
+        left: 0;
+        top: 7px;
+      }
+      .step.active {
+        color: #0f172a;
+        font-weight: 600;
+      }
+      .step.active::before { background: #0f172a; }
+      .step.done {
+        color: #059669;
+      }
+      .step.done::before { background: #059669; }
       .progress-wrap {
         width: 100%;
-        height: 10px;
+        height: 9px;
         margin-top: 18px;
         border-radius: 999px;
         overflow: hidden;
-        background: rgba(226, 232, 240, 0.18);
+        background: #e5ebf3;
       }
       .progress {
         width: 6%;
         height: 100%;
         border-radius: inherit;
-        background: linear-gradient(90deg, #22d3ee, #60a5fa, #a78bfa);
+        background: #0f172a;
         transition: width 40ms linear;
       }
-      .countdown { margin-top: 14px; color: #cbd5e1; font-size: 14px; }
+      .countdown { margin-top: 12px; color: #64748b; font-size: 14px; }
       .bot-message {
         max-width: 760px;
         margin: 72px auto;
         padding: 0 24px;
       }
-      .bot-message p { color: #cbd5e1; }
+      .bot-message p { color: #475569; }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
     </style>
     ${redirectScript}
   </head>
