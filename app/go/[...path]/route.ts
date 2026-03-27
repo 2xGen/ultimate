@@ -64,6 +64,19 @@ function isPreviewBot(userAgent: string): boolean {
   return BOT_PATTERNS.some((bot) => ua.includes(bot));
 }
 
+function isLikelyHumanNavigation(requestHeaders: Headers): boolean {
+  const secFetchUser = requestHeaders.get("sec-fetch-user");
+  const secFetchMode = requestHeaders.get("sec-fetch-mode");
+  const secFetchDest = requestHeaders.get("sec-fetch-dest");
+  const upgradeInsecureRequests = requestHeaders.get("upgrade-insecure-requests");
+
+  return (
+    secFetchUser === "?1" ||
+    (secFetchMode === "navigate" && secFetchDest === "document") ||
+    upgradeInsecureRequests === "1"
+  );
+}
+
 function buildDestination(pathSegments: string[], originalSearch: string): string {
   const joinedPath = pathSegments.map(encodeURIComponent).join("/");
   const base = `https://www.viator.com/${joinedPath}`;
@@ -332,7 +345,7 @@ export async function GET(
   const currentUrl = await getCurrentGoUrl(pathSegments, originalSearch);
   const h = await headers();
   const userAgent = h.get("user-agent") || "";
-  const bot = isPreviewBot(userAgent);
+  const bot = isPreviewBot(userAgent) && !isLikelyHumanNavigation(request.headers);
   const html = buildHtml({
     isBot: bot,
     title,
