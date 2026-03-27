@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { type NextRequest } from "next/server";
 
 const AFFILIATE_PARAMS = "pid=P00222666&mcid=42383&medium=link";
-const OG_DESCRIPTION = "Taking you to the best price...";
+const OG_DESCRIPTION = "See verified reviews, live availability, and the latest tour pricing.";
 const OG_IMAGE_URL =
   "https://iemgpccgdlwpsrsjuumo.supabase.co/storage/v1/object/public/tour-fotos/ultimate%20og.jpg";
 
