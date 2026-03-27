@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { type NextRequest } from "next/server";
 
 const AFFILIATE_PARAMS = "pid=P00222666&mcid=42383&medium=link";
 const OG_DESCRIPTION = "Taking you to the best price...";
@@ -76,8 +77,11 @@ function buildDestination(pathSegments: string[], originalSearch: string): strin
   return `${base}?${mergedQuery}`;
 }
 
-function getCurrentGoUrl(pathSegments: string[], originalSearch: string): string {
-  const h = headers();
+async function getCurrentGoUrl(
+  pathSegments: string[],
+  originalSearch: string,
+): Promise<string> {
+  const h = await headers();
   const host = h.get("x-forwarded-host") || h.get("host") || "ultimate-travel-tips.com";
   const proto = h.get("x-forwarded-proto") || "https";
   const path = pathSegments.map(encodeURIComponent).join("/");
@@ -225,16 +229,18 @@ function buildHtml({
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { path: string[] } },
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> },
 ): Promise<Response> {
-  const pathSegments = params.path || [];
+  const { path } = await context.params;
+  const pathSegments = path || [];
   const requestUrl = new URL(request.url);
   const originalSearch = requestUrl.search || "";
   const destination = buildDestination(pathSegments, originalSearch);
   const title = extractTitle(pathSegments);
-  const currentUrl = getCurrentGoUrl(pathSegments, originalSearch);
-  const userAgent = headers().get("user-agent") || "";
+  const currentUrl = await getCurrentGoUrl(pathSegments, originalSearch);
+  const h = await headers();
+  const userAgent = h.get("user-agent") || "";
   const bot = isPreviewBot(userAgent);
   const html = buildHtml({
     isBot: bot,
