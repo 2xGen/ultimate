@@ -1,13 +1,11 @@
 "use client";
 
 import { type CSSProperties, type FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -26,8 +24,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/");
-      router.refresh();
+      // Full navigation so the new cookie is sent immediately (avoids client-router edge cases in dev).
+      window.location.assign("/");
     } catch {
       setError("Login failed. Please try again.");
     } finally {

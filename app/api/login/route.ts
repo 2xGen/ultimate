@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 const AUTH_COOKIE = "utt_auth";
 const PASSWORD = "tobias";
 
+function shouldUseSecureCookie(request: Request): boolean {
+  const forwarded = request.headers.get("x-forwarded-proto");
+  if (forwarded === "https") return true;
+  if (forwarded === "http") return false;
+  return new URL(request.url).protocol === "https:";
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   let password = "";
 
@@ -22,7 +29,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     name: AUTH_COOKIE,
     value: "1",
     httpOnly: true,
-    secure: true,
+    // `Secure` cookies are ignored on http://localhost — login would "work" but never stick.
+    secure: shouldUseSecureCookie(request),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24,
